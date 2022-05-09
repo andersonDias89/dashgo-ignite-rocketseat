@@ -1,6 +1,6 @@
 import { Box, Flex, SimpleGrid, Text } from "@chakra-ui/react";
-import { Header } from "../components/Header";
-import { Sidebar } from "../components/Sidebar";
+import { Header } from "../components/Header/Header";
+import { Sidebar } from "../components/Sidebar/Sidebar";
 import dynamic from "next/dynamic";
 import { theme } from "../styles/theme";
 import { ApexOptions } from "apexcharts";
@@ -80,7 +80,7 @@ export default function Dashboard() {
 
                 <SimpleGrid flex={1} gap={4} minChildWidth='320px' alignItems='flex-start'>
                     <Box
-                        p={8}
+                        p={['6', '8']}
                         bg='gray.800'
                         borderRadius={8}
                     >
