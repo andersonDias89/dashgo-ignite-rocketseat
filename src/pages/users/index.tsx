@@ -1,15 +1,45 @@
-import { Box, Button, Checkbox, Flex, Heading, Icon, Table, Th, Tr, Thead, Tbody, Td, Text, useBreakpointValue } from "@chakra-ui/react";
-import { RiAddLine, RiPencilLine } from "react-icons/ri";
+import { Box, Button, Checkbox, Flex, Heading, Icon, Table, Th, Tr, Thead, Tbody, Td, Text, useBreakpointValue, Spinner, Link } from "@chakra-ui/react";
+import { RiAddLine } from "react-icons/ri";
 import { Header } from "../../components/Header/Header";
 import { Pagination } from "../../components/Pagination/Pagination";
 import { Sidebar } from "../../components/Sidebar/Sidebar";
-import Link from "next/link";
+import NextLink from "next/link";
+import { useEffect, useState } from "react";
+import { useUsers } from "../../services/hooks/useUsers";
+import { queryClient } from "../../services/queryClient";
+import { api } from "../../services/api";
+
+
+
+
 
 export default function UserList() {
+    const [page, setPage] = useState(1)
+    const { data, isLoading, isFetching, error } = useUsers(page)
+
+
+
     const isWiteVersion = useBreakpointValue({
         base: false,
         lg: true
     })
+
+     async function handlePrefetchUser(userId: number){
+        await queryClient.prefetchQuery(['user', userId], async () => {
+            const response = await api.get(`users/${userId}`)
+
+            return response.data
+        }, {
+            staleTime: 1000 * 60 * 10 //10 min
+        }
+        )
+    }
+
+    useEffect(() => {
+        fetch('http://localhost:3000/api/users')
+            .then(response => response.json())
+            .then(data => console.log(data))
+    }, [])
 
     return (
         <Box>
@@ -22,7 +52,7 @@ export default function UserList() {
                     <Flex mb={8} justify='space-between' align='center'>
                         <Heading size='lg' fontWeight='normal'>Lista de Usuários</Heading>
 
-                        <Link href='/users/create' passHref>
+                        <NextLink href='/users/create' passHref>
                             <Button
                                 as='a'
                                 size='sm'
@@ -32,71 +62,67 @@ export default function UserList() {
                             >
                                 Criar novo
                             </Button>
-                        </Link>
+                        </NextLink>
 
                     </Flex>
+                    {isLoading ? (
+                        <Flex justify='center'>
+                            <Spinner />
+                        </Flex>
+                    ) : error ? (
+                        <Flex justify='center'>
+                            <Text>Falha em obter os dados</Text>
+                        </Flex>
+                    ) : (
+                        <>
+                            <Table colorScheme='whiteAlpha'>
+                                <Thead>
+                                    <Tr>
+                                        <Th px={['4', '4', '6']} color='gray.300' w='8'>
+                                            <Checkbox colorScheme='pink' />
+                                        </Th>
+                                        <Th>
+                                            Usuários
+                                            {!isLoading && isFetching && <Spinner size='sm' color="gray.500" ml={4} />}
 
-                    <Table colorScheme='whiteAlpha'>
-                        <Thead>
-                            <Tr>
-                                <Th px={['4', '4', '6']} color='gray.300' w='8'>
-                                    <Checkbox colorScheme='pink' />
-                                </Th>
-                                <Th>Usuários</Th>
-                                {isWiteVersion && <Th>Data de cadastro</Th>}
-                                <Th width={8}></Th>
-                            </Tr>
-                        </Thead>
+                                        </Th>
+                                        {isWiteVersion && <Th>Data de cadastro</Th>}
+                                        <Th width={8}></Th>
+                                    </Tr>
+                                </Thead>
 
-                        <Tbody>
-                            <Tr>
-                                <Td px={['4', '4', '6']}>
-                                    <Checkbox colorScheme='pink' />
-                                </Td>
-                                <Td>
-                                    <Box>
-                                        <Text fontWeight='bold' >Anderson Dias</Text>
-                                        <Text fontSize='sm' color='gray.300'>andersondiasmd21@gmail.com</Text>
-                                    </Box>
-                                </Td>
-                                {isWiteVersion && <Td>10 de maio, 2022</Td>}
+                                <Tbody>
+                                    {data.users.map(user => {
+                                        return (
+                                            <Tr key={user.id}>
+                                                <Td px={['4', '4', '6']}>
+                                                    <Checkbox colorScheme='pink' />
+                                                </Td>
+                                                <Td>
+                                                    <Box>
+                                                        <Link color='purple.400' onMouseEnter={() => handlePrefetchUser(user.id)}>
+                                                            <Text fontWeight='bold' >{user.name}</Text>
+                                                        </Link>
+                                                        <Text fontSize='sm' color='gray.300'>{user.email}</Text>
+                                                    </Box>
+                                                </Td>
+                                                {isWiteVersion && <Td>{user.createdAt}</Td>}
 
-                            </Tr>
+                                            </Tr>
+                                        )
+                                    })}
+                                </Tbody>
 
-                            <Tr>
-                                <Td px={['4', '4', '6']}>
-                                    <Checkbox colorScheme='pink' />
-                                </Td>
-                                <Td>
-                                    <Box>
-                                        <Text fontWeight='bold' >Karol Barreto</Text>
-                                        <Text fontSize='sm' color='gray.300'>karolbarreto@gmail.com</Text>
-                                    </Box>
-                                </Td>
-                                {isWiteVersion && <Td>11 de abril, 2022</Td>}
+                            </Table>
 
-                            </Tr>
+                            <Pagination
+                                totalCountOfRegisters={data.totalCount}
+                                currentPage={page}
+                                onPageChange={setPage}
+                            />
+                        </>
+                    )}
 
-                            <Tr>
-                                <Td px={['4', '4', '6']}>
-                                    <Checkbox colorScheme='pink' />
-                                </Td>
-                                <Td>
-                                    <Box>
-                                        <Text fontWeight='bold' >Alice Barreto</Text>
-                                        <Text fontSize='sm' color='gray.300'>alicegabriella@gmail.com</Text>
-                                    </Box>
-                                </Td>
-                                {isWiteVersion && <Td>13 de março, 2022</Td>}
-
-                            </Tr>
-
-
-                        </Tbody>
-
-                    </Table>
-
-                    <Pagination />
                 </Box>
             </Flex>
 
